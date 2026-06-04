@@ -194,11 +194,10 @@ if seite == "Dashboard":
         st.markdown("</div>", unsafe_allow_html=True)
 
 elif seite == "Planer":
-    exec(open("planer_modul.py", encoding="utf-8").read())
+    exec(open('planer_modul.py', encoding='utf-8').read())
 
 elif seite == "Notizen":
-    app_header("Notizen", "📝")
-    st.markdown("<div class='card'><h3>🚧 Wird aufgebaut...</h3><p style='color:#6b6258;'>Das Notizen-Modul kommt in Phase 4.</p></div>", unsafe_allow_html=True)
+    exec(open("notizen_modul.py", encoding="utf-8").read())
 
 elif seite == "Rechnungen":
     app_header("Rechnungen", "📄")
