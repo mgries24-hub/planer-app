@@ -200,8 +200,7 @@ elif seite == "Notizen":
     exec(open("notizen_modul.py", encoding="utf-8").read())
 
 elif seite == "Rechnungen":
-    app_header("Rechnungen", "📄")
-    st.markdown("<div class='card'><h3>🚧 Wird aufgebaut...</h3><p style='color:#6b6258;'>Das Rechnungs-Modul kommt in Phase 5.</p></div>", unsafe_allow_html=True)
+    exec(open("rechnungen_modul.py", encoding="utf-8").read())
 
 elif seite == "Outlook":
     app_header("Outlook", "✉️")
