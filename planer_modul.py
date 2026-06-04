@@ -285,7 +285,7 @@ with col_links:
     for aufgabe in sorted(offen, key=lambda x: x["datum"]):
         col_check, col_text, col_edit = st.columns([0.5, 4, 0.8])
         with col_check:
-            if st.checkbox("", key=f"check_{aufgabe['id']}", value=False):
+            if st.checkbox("✓", key=f"check_{aufgabe['id']}", value=False, label_visibility="hidden"):
                 aufgabe["erledigt"] = True
                 speichere_aufgaben(st.session_state.aufgaben)
                 st.rerun()
@@ -305,7 +305,7 @@ with col_links:
         for aufgabe in erledigt:
             col_check, col_text = st.columns([0.5, 5])
             with col_check:
-                if st.checkbox("", key=f"check_{aufgabe['id']}", value=True):
+                if st.checkbox("✓", key=f"check_{aufgabe['id']}", value=True, label_visibility="hidden"):
                     pass
                 else:
                     aufgabe["erledigt"] = False

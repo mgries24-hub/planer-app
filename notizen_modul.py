@@ -497,11 +497,18 @@ with col_rechts:
                     st.success("Gespeichert!")
                     st.rerun()
             with col2:
-                if st.button("🖨️ Drucken", use_container_width=True, key="print_notiz"):
-                    st.markdown("""
-                    <script>window.print();</script>
-                    """, unsafe_allow_html=True)
-                    st.info("Druckdialog wird geöffnet...")
+                # Drucken als PDF Export
+                    druck_text = f"""TITEL: {notiz.get('titel', '')}
+DATUM: {notiz.get('datum', '')}
+ORDNER: {notiz.get('ordner', '')}
+
+{notiz.get('inhalt', '')}"""
+                    st.download_button("🖨️ Als PDF/Drucken", 
+                        data=druck_text.encode('utf-8'),
+                        file_name=f"{notiz.get('titel', 'notiz')}.txt",
+                        mime="text/plain",
+                        use_container_width=True, 
+                        key="print_notiz")
             with col3:
                 # Als TXT herunterladen
                 export_text = f"Titel: {notiz.get('titel', '')}\n"
