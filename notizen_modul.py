@@ -2,6 +2,15 @@ import streamlit as st
 from datetime import datetime, date
 import json
 import os
+import sys
+
+# KI Helfer laden
+def lade_ki():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ki_helfer", "ki_helfer.py")
+    ki = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ki)
+    return ki
 
 # ─── Daten laden/speichern ─────────────────────────────────────
 NOTIZEN_FILE = "data/notizen.json"
@@ -525,6 +534,112 @@ ORDNER: {notiz.get('ordner', '')}
                     speichere_notizen(st.session_state.notizen)
                     st.session_state.sel_notiz_id = None
                     st.rerun()
+            
+            # KI Funktionen
+            st.markdown("<div style='background:#faf7f0; border:1px solid #e6dfd3; border-radius:12px; padding:14px; margin-top:14px;'>", unsafe_allow_html=True)
+            st.markdown("**🤖 KI-Funktionen**")
+            ki = lade_ki()
+            if not ki.hat_api_key():
+                st.warning("⚠️ Kein API-Key hinterlegt. Bitte unter ⚙️ Einstellungen eintragen.")
+            else:
+                col_ki1, col_ki2, col_ki3, col_ki4 = st.columns(4)
+                with col_ki1:
+                    if st.button("✨ Formatieren", use_container_width=True, key="ki_format"):
+                        with st.spinner("KI formatiert..."):
+                            inhalt = document.getElementById if False else edit_inhalt
+                            ergebnis, fehler = ki.ki_formatieren(edit_inhalt)
+                            if ergebnis:
+                                st.session_state["ki_ergebnis"] = ergebnis
+                                st.session_state["ki_modus"] = "format"
+                            else:
+                                st.error(fehler)
+                with col_ki2:
+                    if st.button("📋 Zusammenfassen", use_container_width=True, key="ki_summary"):
+                        with st.spinner("KI zusammenfasst..."):
+                            ergebnis, fehler = ki.ki_zusammenfassen(edit_inhalt)
+                            if ergebnis:
+                                st.session_state["ki_ergebnis"] = ergebnis
+                                st.session_state["ki_modus"] = "summary"
+                            else:
+                                st.error(fehler)
+                with col_ki3:
+                    if st.button("✅ To-dos finden", use_container_width=True, key="ki_tasks"):
+                        with st.spinner("KI sucht Aufgaben..."):
+                            ergebnis, fehler = ki.ki_aufgaben_extrahieren(edit_inhalt)
+                            if ergebnis:
+                                st.session_state["ki_ergebnis"] = ergebnis
+                                st.session_state["ki_modus"] = "tasks"
+                            else:
+                                st.error(fehler)
+                with col_ki4:
+                    if st.button("🔤 Korrigieren", use_container_width=True, key="ki_grammar"):
+                        with st.spinner("KI korrigiert..."):
+                            ergebnis, fehler = ki.ki_korrigieren(edit_inhalt)
+                            if ergebnis:
+                                st.session_state["ki_ergebnis"] = ergebnis
+                                st.session_state["ki_modus"] = "grammar"
+                            else:
+                                st.error(fehler)
+                
+                # KI Ergebnis anzeigen
+                if "ki_ergebnis" in st.session_state and st.session_state.get("ki_modus"):
+                    modus = st.session_state["ki_modus"]
+                    ergebnis = st.session_state["ki_ergebnis"]
+                    
+                    if modus == "tasks":
+                        try:
+                            aufgaben = json.loads(ergebnis.replace("\","").strip())
+                            st.markdown("**Gefundene To-dos:**")
+                            for i, a in enumerate(aufgaben):
+                                col_a, col_d = st.columns([3,1])
+                                with col_a:
+                                    st.text(a.get("text",""))
+                                with col_d:
+                                    st.text(a.get("datum","") or "kein Datum")
+                            if st.button("📅 Alle in Planer übernehmen", type="primary", key="ki_tasks_add"):
+                                aufgaben_file = "data/aufgaben.json"
+                                bestehende = []
+                                if os.path.exists(aufgaben_file):
+                                    with open(aufgaben_file, "r", encoding="utf-8") as f:
+                                        bestehende = json.load(f)
+                                naechste = max([a["id"] for a in bestehende], default=0) + 1
+                                for a in aufgaben:
+                                    bestehende.append({
+                                        "id": naechste,
+                                        "text": a.get("text",""),
+                                        "datum": a.get("datum") or str(date.today()),
+                                        "erledigt": False,
+                                        "typ": "normal",
+                                        "erstellt": str(date.today())
+                                    })
+                                    naechste += 1
+                                with open(aufgaben_file, "w", encoding="utf-8") as f:
+                                    json.dump(bestehende, f, ensure_ascii=False, indent=2)
+                                st.success(f"{len(aufgaben)} Aufgaben in den Planer übernommen!")
+                                del st.session_state["ki_ergebnis"]
+                                del st.session_state["ki_modus"]
+                        except:
+                            st.markdown(ergebnis)
+                    elif modus in ["format", "grammar"]:
+                        st.markdown("**KI-Ergebnis:**")
+                        st.text_area("Ergebnis", value=ergebnis, height=150, key="ki_result_text")
+                        if st.button("✅ In Notiz übernehmen", type="primary", key="ki_apply"):
+                            notiz["inhalt"] = ergebnis
+                            notiz["geaendert"] = datetime.now().isoformat()
+                            speichere_notizen(st.session_state.notizen)
+                            del st.session_state["ki_ergebnis"]
+                            del st.session_state["ki_modus"]
+                            st.success("Übernommen!")
+                            st.rerun()
+                    else:
+                        st.markdown("**Zusammenfassung:**")
+                        st.info(ergebnis)
+                        if st.button("✖️ Schließen", key="ki_close"):
+                            del st.session_state["ki_ergebnis"]
+                            del st.session_state["ki_modus"]
+                            st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         # Leer-Zustand

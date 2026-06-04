@@ -208,9 +208,53 @@ elif seite == "Outlook":
 
 elif seite == "Einstellungen":
     app_header("Einstellungen", "⚙️")
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("🔑 API-Schlüssel")
-    st.text_input("Anthropic API-Key", type="password", placeholder="sk-ant-...")
-    if st.button("💾 Speichern", type="primary"):
-        st.success("Schlüssel gespeichert!")
+    
+    # KI Helfer laden
+    import importlib.util, sys
+    spec = importlib.util.spec_from_file_location("ki_helfer", "ki_helfer.py")
+    ki = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ki)
+    
+    st.markdown("<div style='background:#fffdf8; border:1px solid #e6dfd3; border-radius:14px; padding:20px; margin-bottom:16px;'>", unsafe_allow_html=True)
+    st.subheader("🔑 Anthropic API-Schlüssel")
+    
+    aktueller_key = ki.lade_api_key()
+    if aktueller_key:
+        st.markdown("<div style='background:#dcfce7; border:1px solid #86efac; border-radius:8px; padding:10px 14px; margin-bottom:12px;'><span style='color:#166534;'>✅ API-Schlüssel ist hinterlegt und aktiv</span></div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div style='background:#fee2e2; border:1px solid #fca5a5; border-radius:8px; padding:10px 14px; margin-bottom:12px;'><span style='color:#991b1b;'>⚠️ Kein API-Schlüssel hinterlegt - KI-Funktionen nicht verfügbar</span></div>", unsafe_allow_html=True)
+    
+    neuer_key = st.text_input("Anthropic API-Key", type="password", placeholder="sk-ant-...", value=aktueller_key)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("💾 Schlüssel speichern", type="primary", use_container_width=True):
+            if neuer_key:
+                ki.speichere_api_key(neuer_key)
+                st.success("✅ Schlüssel gespeichert! KI-Funktionen sind jetzt aktiv.")
+                st.rerun()
+    with col2:
+        if st.button("🔍 Verbindung testen", use_container_width=True):
+            with st.spinner("Teste Verbindung..."):
+                antwort, fehler = ki.claude_anfrage("Antworte nur mit: OK", max_tokens=10)
+                if antwort:
+                    st.success("✅ Verbindung erfolgreich!")
+                else:
+                    st.error(f"❌ Fehler: {fehler}")
+    
+    st.markdown("<div style='font-size:0.8rem; color:#6b6258; margin-top:10px;'>Der Schlüssel wird lokal auf deinem PC gespeichert und nicht weitergegeben.</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Daten Export
+    st.markdown("<div style='background:#fffdf8; border:1px solid #e6dfd3; border-radius:14px; padding:20px;'>", unsafe_allow_html=True)
+    st.subheader("💾 Datensicherung")
+    if st.button("⬇️ Alle Daten exportieren", use_container_width=True):
+        import zipfile, io
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zf:
+            for datei in ["data/aufgaben.json", "data/notizen.json", "data/rechnungen.json", "data/lieferanten.json"]:
+                if os.path.exists(datei):
+                    zf.write(datei)
+        st.download_button("📦 ZIP herunterladen", data=zip_buffer.getvalue(),
+            file_name=f"planer_backup_{date.today()}.zip", mime="application/zip")
     st.markdown("</div>", unsafe_allow_html=True)
