@@ -588,7 +588,7 @@ ORDNER: {notiz.get('ordner', '')}
                     
                     if modus == "tasks":
                         try:
-                            aufgaben = json.loads(ergebnis.replace("\","").strip())
+                            aufgaben = json.loads(ergebnis.replace("```json","").replace("```","").strip())
                             st.markdown("**Gefundene To-dos:**")
                             for i, a in enumerate(aufgaben):
                                 col_a, col_d = st.columns([3,1])
@@ -623,14 +623,24 @@ ORDNER: {notiz.get('ordner', '')}
                     elif modus in ["format", "grammar"]:
                         st.markdown("**KI-Ergebnis:**")
                         st.text_area("Ergebnis", value=ergebnis, height=150, key="ki_result_text")
-                        if st.button("✅ In Notiz übernehmen", type="primary", key="ki_apply"):
-                            notiz["inhalt"] = ergebnis
-                            notiz["geaendert"] = datetime.now().isoformat()
-                            speichere_notizen(st.session_state.notizen)
-                            del st.session_state["ki_ergebnis"]
-                            del st.session_state["ki_modus"]
-                            st.success("Übernommen!")
-                            st.rerun()
+                        col_apply, col_close = st.columns(2)
+                        with col_apply:
+                            if st.button("✅ In Notiz übernehmen", type="primary", use_container_width=True, key="ki_apply"):
+                                for n in st.session_state.notizen:
+                                    if n["id"] == st.session_state.sel_notiz_id:
+                                        n["inhalt"] = ergebnis
+                                        n["geaendert"] = datetime.now().isoformat()
+                                        break
+                                speichere_notizen(st.session_state.notizen)
+                                st.session_state["ki_ergebnis"] = None
+                                st.session_state["ki_modus"] = None
+                                st.success("✅ Übernommen!")
+                                st.rerun()
+                        with col_close:
+                            if st.button("✖️ Verwerfen", use_container_width=True, key="ki_discard"):
+                                st.session_state["ki_ergebnis"] = None
+                                st.session_state["ki_modus"] = None
+                                st.rerun()
                     else:
                         st.markdown("**Zusammenfassung:**")
                         st.info(ergebnis)
