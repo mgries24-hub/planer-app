@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Daten (lokal, nicht in GitHub)
+data/*.json
+data/*.pdf
+
+# Windows
+Thumbs.db
+desktop.ini
