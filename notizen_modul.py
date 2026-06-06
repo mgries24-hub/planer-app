@@ -135,6 +135,86 @@ with col_links:
     # Suche
     suche = st.text_input("🔍 Notizen suchen", placeholder="Suchbegriff eingeben...")
     
+    # Upload Zone für Samsung Notes und PDF
+    st.markdown("**📎 Datei hochladen**")
+    uploaded_file = st.file_uploader(
+        "Samsung Notes (PDF/JPG) oder PDF hochladen",
+        type=["pdf", "jpg", "jpeg", "png", "webp"],
+        key="notiz_upload",
+        label_visibility="collapsed"
+    )
+    
+    if uploaded_file is not None:
+        ki = lade_ki()
+        if not ki.hat_api_key():
+            st.warning("⚠️ API-Key in Einstellungen eintragen für Texterkennung")
+        else:
+            with st.spinner("KI liest Datei..."):
+                import io
+                datei_bytes = uploaded_file.read()
+                datei_name = uploaded_file.name
+                
+                # Bild oder PDF verarbeiten
+                ist_bild = uploaded_file.type.startswith("image/")
+                ist_pdf = uploaded_file.type == "application/pdf"
+                
+                extrahierter_text = ""
+                
+                if ist_bild:
+                    # Direkt als Bild an KI schicken
+                    antwort, fehler = ki.claude_bild_anfrage(
+                        datei_bytes, 
+                        uploaded_file.type,
+                        "Lies den gesamten Text aus diesem Bild. Übertrage Handschrift so genau wie möglich. Gib nur den Text zurück, ohne Kommentar."
+                    )
+                    if antwort:
+                        extrahierter_text = antwort
+                    else:
+                        st.error(f"Fehler: {fehler}")
+                
+                elif ist_pdf:
+                    # PDF Text extrahieren
+                    try:
+                        import pypdf
+                        reader = pypdf.PdfReader(io.BytesIO(datei_bytes))
+                        for seite in reader.pages:
+                            extrahierter_text += seite.extract_text() + "\n\n"
+                        
+                        if len(extrahierter_text.strip()) < 10:
+                            st.info("PDF enthält keinen lesbaren Text — versuche OCR...")
+                            antwort, fehler = ki.claude_bild_anfrage(
+                                datei_bytes,
+                                "application/pdf", 
+                                "Lies den Text aus diesem PDF. Gib nur den Text zurück."
+                            )
+                            if antwort:
+                                extrahierter_text = antwort
+                    except Exception as e:
+                        st.error(f"PDF Fehler: {e}")
+                
+                if extrahierter_text:
+                    # Neue Notiz aus Datei erstellen
+                    neue_notiz = {
+                        "id": naechste_id(st.session_state.notizen),
+                        "vorlage": "allgemein",
+                        "titel": uploaded_file.name.replace(".pdf","").replace(".jpg","").replace(".png",""),
+                        "thema": "Import",
+                        "datum": str(date.today()),
+                        "inhalt": extrahierter_text.strip(),
+                        "ordner": STANDARD_ORDNER[0],
+                        "tags": [],
+                        "erstellt": datetime.now().isoformat(),
+                        "geaendert": datetime.now().isoformat(),
+                        "quelle": uploaded_file.name
+                    }
+                    st.session_state.notizen.insert(0, neue_notiz)
+                    speichere_notizen(st.session_state.notizen)
+                    st.session_state.sel_notiz_id = neue_notiz["id"]
+                    st.success(f"✅ '{uploaded_file.name}' importiert!")
+                    st.rerun()
+    
+    st.markdown("---")
+    
     # Neue Notiz Button
     if st.button("✏️ Neue Notiz", use_container_width=True, type="primary"):
         st.session_state.zeige_neu_notiz = True
@@ -524,9 +604,18 @@ ORDNER: {notiz.get('ordner', '')}
                 export_text += f"Datum: {notiz.get('datum', '')}\n"
                 export_text += f"Ordner: {notiz.get('ordner', '')}\n\n"
                 export_text += notiz.get("inhalt", "")
-                st.download_button("📤 Teilen", data=export_text,
-                    file_name=f"{notiz.get('titel', 'notiz')}.txt",
-                    mime="text/plain", use_container_width=True, key="share_notiz")
+                # Teilen per Mail
+                mail_betreff = f"Notiz: {notiz.get('titel', '')}"
+                mail_body = export_text.replace("\n", "%0A").replace(" ", "%20")[:500]
+                mail_link = f"mailto:?subject={mail_betreff.replace(' ', '%20')}&body={mail_body}"
+                st.markdown(f"""
+                <a href="{mail_link}" target="_blank">
+                    <button style='background:#faf7f0; border:1px solid #e6dfd3; padding:10px; border-radius:10px; 
+                    cursor:pointer; width:100%; font-size:0.9rem; font-weight:600;'>
+                        📧 Per Mail teilen
+                    </button>
+                </a>
+                """, unsafe_allow_html=True)
             with col4:
                 if st.button("🗑️ Löschen", use_container_width=True, key="del_notiz"):
                     st.session_state.notizen = [n for n in st.session_state.notizen 
