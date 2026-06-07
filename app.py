@@ -3,6 +3,25 @@ from datetime import datetime
 import json
 import os
 
+# ─── OneDrive Basispfad ───────────────────────────────────────
+ONEDRIVE_BASE = os.path.join(
+    os.path.expanduser("~"),
+    "OneDrive - Gries Schleiftechnik GmbH & Co. KG",
+    "Dokumente - Gries DMS",
+    "01_PlanerApp"
+)
+
+# Fallback: lokaler data Ordner falls OneDrive nicht verfügbar
+if os.path.exists(ONEDRIVE_BASE):
+    DATA_BASE = ONEDRIVE_BASE
+else:
+    DATA_BASE = "data"
+
+os.makedirs(DATA_BASE, exist_ok=True)
+os.makedirs(os.path.join(DATA_BASE, "Notizen"), exist_ok=True)
+os.makedirs(os.path.join(DATA_BASE, "Aufgaben"), exist_ok=True)
+os.makedirs(os.path.join(DATA_BASE, "Rechnungen"), exist_ok=True)
+
 st.set_page_config(
     page_title="Planer App",
     page_icon="📋",
@@ -80,20 +99,20 @@ if "seite" not in st.session_state:
     st.session_state.seite = "Dashboard"
 
 def lade_aufgaben():
-    if os.path.exists("data/aufgaben.json"):
-        with open("data/aufgaben.json", "r", encoding="utf-8") as f:
+    if os.path.exists(os.path.join(DATA_BASE, "Aufgaben", "aufgaben.json")):
+        with open(os.path.join(DATA_BASE, "Aufgaben", "aufgaben.json"), "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
 def lade_notizen():
-    if os.path.exists("data/notizen.json"):
-        with open("data/notizen.json", "r", encoding="utf-8") as f:
+    if os.path.exists(os.path.join(DATA_BASE, "Notizen", "notizen.json")):
+        with open(os.path.join(DATA_BASE, "Notizen", "notizen.json"), "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
 def lade_rechnungen():
-    if os.path.exists("data/rechnungen.json"):
-        with open("data/rechnungen.json", "r", encoding="utf-8") as f:
+    if os.path.exists(os.path.join(DATA_BASE, "Rechnungen", "rechnungen.json")):
+        with open(os.path.join(DATA_BASE, "Rechnungen", "rechnungen.json"), "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 

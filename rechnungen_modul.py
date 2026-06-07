@@ -5,9 +5,16 @@ import os
 import base64
 
 # ─── Daten laden/speichern ─────────────────────────────────────
-RECHNUNGEN_FILE = "data/rechnungen.json"
-LIEFERANTEN_FILE = "data/lieferanten.json"
-PDF_ORDNER = "data/rechnungen_pdf"
+import os
+def get_data_base():
+    onedrive = os.path.join(os.path.expanduser("~"), "OneDrive - Gries Schleiftechnik GmbH & Co. KG", "Dokumente - Gries DMS", "01_PlanerApp")
+    return onedrive if os.path.exists(onedrive) else "data"
+DATA_BASE = get_data_base()
+Rechnungen_DIR = os.path.join(DATA_BASE, "Rechnungen")
+os.makedirs(Rechnungen_DIR, exist_ok=True)
+RECHNUNGEN_FILE = os.path.join(Rechnungen_DIR, "rechnungen.json")
+LIEFERANTEN_FILE = os.path.join(Rechnungen_DIR, "lieferanten.json")
+PDF_ORDNER = os.path.join(Rechnungen_DIR, "PDFs")
 
 def lade_rechnungen():
     if os.path.exists(RECHNUNGEN_FILE):

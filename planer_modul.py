@@ -4,7 +4,12 @@ import json
 import os
 
 # ─── Daten laden/speichern ─────────────────────────────────────
-DATA_FILE = "data/aufgaben.json"
+import os
+def get_data_base():
+    onedrive = os.path.join(os.path.expanduser("~"), "OneDrive - Gries Schleiftechnik GmbH & Co. KG", "Dokumente - Gries DMS", "01_PlanerApp")
+    return onedrive if os.path.exists(onedrive) else "data"
+DATA_BASE = get_data_base()
+DATA_FILE = os.path.join(DATA_BASE, "Aufgaben", "aufgaben.json")
 
 def lade_aufgaben():
     if os.path.exists(DATA_FILE):

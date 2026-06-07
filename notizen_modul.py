@@ -13,8 +13,13 @@ def lade_ki():
     return ki
 
 # ─── Daten laden/speichern ─────────────────────────────────────
-NOTIZEN_FILE = "data/notizen.json"
-ORDNER_FILE = "data/ordner.json"
+import os
+def get_data_base():
+    onedrive = os.path.join(os.path.expanduser("~"), "OneDrive - Gries Schleiftechnik GmbH & Co. KG", "Dokumente - Gries DMS", "01_PlanerApp")
+    return onedrive if os.path.exists(onedrive) else "data"
+DATA_BASE = get_data_base()
+NOTIZEN_FILE = os.path.join(DATA_BASE, "Notizen", "notizen.json")
+ORDNER_FILE = os.path.join(DATA_BASE, "Notizen", "ordner.json")
 
 STANDARD_ORDNER = [
     "00 Eingang", "10 Projekte", "20 Schleifprozess",
